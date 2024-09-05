@@ -1,0 +1,27 @@
+{
+  "name": "lab1",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch index.js",
+    "test": "mocha",
+    "coverage": "c8 mocha"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "c8": "^10.1.2",
+    "chai": "^5.1.1",
+    "colors": "^1.4.0",
+    "express": "^4.19.2",
+    "lab1": "file:",
+    "mongodb": "^6.8.0"
+  },
+  "devDependencies": {
+    "mocha": "^10.7.3",
+    "supertest": "^7.0.0"
+  }
+}
