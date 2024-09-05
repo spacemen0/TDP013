@@ -33,7 +33,7 @@ export const markMessageStatus = async (req, res) => {
             return res.status(404).json({ error: 'Message not found' });
         }
 
-        res.status(200).json({ message: 'Message updated successfully' });
+        res.status(201).json({ message: 'Message updated successfully' });
     } catch (error) {
         res.status(500).json({ error: 'Failed to update message' });
     }

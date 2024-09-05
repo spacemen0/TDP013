@@ -26,10 +26,10 @@ describe("Messages API", () => {
         closeDatabaseConnection();
     });
 
-    it("should create a message", async () => {
+    it("should create a new message and return a success response", async () => {
         const res = await request(app)
             .post("/messages")
-            .send({ message: "Test message" });
+            .send({ message: "321312312312" });
 
         expect(res.status).to.equal(200);
         expect(res.body).to.include({
@@ -38,7 +38,7 @@ describe("Messages API", () => {
         expect(res.body).to.have.property("id").that.is.a("string");
     });
 
-    it("should return 400 if message is empty", async () => {
+    it("should return a 400 error if the message content is empty or invalid", async () => {
         const res = await request(app)
             .post("/messages")
             .send({ message: "   " });
@@ -47,14 +47,14 @@ describe("Messages API", () => {
         expect(res.body).to.have.property("error", "Valid message content is required");
     });
 
-    it("should return 404 for non-existent route", async () => {
+    it("should return a 404 error for a non-existent route", async () => {
         const res = await request(app)
             .get("/notexist");
 
         expect(res.status).to.equal(404);
     });
 
-    it("should return 405 for incorrect method on /messages route", async () => {
+    it("should return a 405 error for incorrect HTTP methods on the /messages route", async () => {
         const res = await request(app)
             .put("/messages")
             .send({ message: "Invalid method" });
@@ -62,7 +62,35 @@ describe("Messages API", () => {
         expect(res.status).to.equal(405);
     });
 
-    it("should return 400 for invalid message format", async () => {
+    it("should update the read status of a message and return a success response", async () => {
+        let res = await request(app)
+            .post("/messages")
+            .send({ message: "Test message" });
+
+        const id = res.body.id;
+
+        res = await request(app)
+            .patch(`/messages/${id}`).send({ read: true });
+
+        expect(res.status).to.equal(201);
+        expect(res.body).to.have.property("message", "Message updated successfully");
+    });
+
+    it("should return a 404 error for an invalid or non-existent message ID", async () => {
+        let res = await request(app)
+            .post("/messages")
+            .send({ message: "Test message" });
+
+        const id = res.body.id;
+
+        res = await request(app)
+            .patch(`/messages/${id.slice(0, -3) + "aaa"}`).send({ read: true });
+
+        expect(res.status).to.equal(404);
+        expect(res.body).to.have.property("error", "Message not found");
+    });
+
+    it("should return a 400 error for an invalid message format", async () => {
         const res = await request(app)
             .post("/messages")
             .send({ invalidField: "Invalid format" });
@@ -71,7 +99,7 @@ describe("Messages API", () => {
         expect(res.body).to.have.property("error", "Valid message content is required");
     });
 
-    it("should get message after it is created", async () => {
+    it("should retrieve a specific message by its ID", async () => {
         let res = await request(app)
             .post("/messages")
             .send({ message: "Test message" });
@@ -83,5 +111,13 @@ describe("Messages API", () => {
 
         expect(res.status).to.equal(200);
         expect(res.body).to.have.property("message", "Test message");
+    });
+
+    it("should retrieve all messages and verify the response is an array", async () => {
+        const res = await request(app)
+            .get(`/messages`);
+
+        expect(res.status).to.equal(200);
+        expect(res.body).to.be.an("array");
     });
 });
