@@ -89,6 +89,19 @@ describe("Messages API", () => {
         expect(res.status).to.equal(404);
         expect(res.body).to.have.property("error", "Message not found");
     });
+    it("should return a 400 error for an invalid message ID", async () => {
+        let res = await request(app)
+            .post("/messages")
+            .send({ message: "Test message" });
+
+        const id = res.body.id;
+
+        res = await request(app)
+            .patch(`/messages/${id.slice(0, -3) + "aaaaa"}`).send({ read: true });
+
+        expect(res.status).to.equal(400);
+        expect(res.body).to.have.property("error", "Invalid ID");
+    });
 
     it("should return a 400 error for an invalid message format", async () => {
         const res = await request(app)
