@@ -59,35 +59,22 @@
         crossorigin="anonymous"></script>
 
     <script>
-        function setCookie(name, value, days) {
-            const date = new Date();
-            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            const expires = "expires=" + date.toUTCString();
-            document.cookie = name + "=" + encodeURIComponent(value) + ";" + expires + ";path=/";
-        }
+        const apiUrl = "http://localhost:3000"
 
-
-        function getCookie(name) {
-            const cname = name + "=";
-            const cookiesArray = document.cookie.split(';');
-            console.log("cookie array: ", cookiesArray)
-            for (let i = 0; i < cookiesArray.length; i++) {
-                let cookie = cookiesArray[i].trim();
-                if (cookie.indexOf(cname) == 0) {
-                    return decodeURIComponent(cookie.substring(cname.length, cookie.length));
+        function createMessage(message) {
+            const res = fetch(`${apiUrl}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message })
+            }).then(
+                (response) => {
+                    return response.json()
                 }
-            }
-            return "";
-        }
+            ).then((result) => { result })
+            console.log(res)
 
-        function appendTweetToCookie(content, time) {
-            const tweets = getCookie("tweets");
-            const tweetsArray = tweets ? JSON.parse(tweets) : [];
-
-
-            tweetsArray.push({ content: content, time: time });
-
-            setCookie("tweets", JSON.stringify(tweetsArray), 7);
         }
 
         function generateTweet(content, time) {
@@ -120,18 +107,19 @@
             return tweetCard;
         }
 
-        function loadTweetsFromCookie() {
-            const tweets = getCookie("tweets");
-            if (tweets) {
-                const tweetsArray = JSON.parse(tweets);
+
+        async function fetchMessages() {
+            const res = await fetch(`${apiUrl}/messages`)
+            if (res) {
+                const tweetsArray = await res.json()
                 tweetsArray.reverse().forEach(tweet => {
-                    const tweetCard = generateTweet(tweet.content, tweet.time);
+                    const tweetCard = generateTweet(tweet.message, new Date().toLocaleString());
                     document.getElementById('tweets').appendChild(tweetCard);
                 });
             }
         }
 
-        window.onload = loadTweetsFromCookie
+        window.onload = fetchMessages
 
         document.getElementById('postButton').addEventListener('click', function () {
             let tweetInput = document.getElementById('tweetInput');
@@ -147,6 +135,7 @@
             } else {
                 warningText.classList.add("d-none");
                 const time = new Date().toLocaleString();
+                createMessage(tweetValue)
                 const tweetCard = generateTweet(tweetValue, time);
                 document.getElementById('tweets').insertBefore(tweetCard, document.getElementById('tweets').firstChild);
                 tweetInput.value = '';
