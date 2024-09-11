@@ -16,6 +16,7 @@
     "c8": "^10.1.2",
     "chai": "^5.1.1",
     "colors": "^1.4.0",
+    "cors": "^2.8.5",
     "express": "^5.0.0",
     "mongodb": "^6.8.0",
     "node_express": "file:"
