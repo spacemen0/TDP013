@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import sanitize from 'mongo-sanitize';
 import { getDatabaseConnection } from '../db/conn.js';
 
 
@@ -69,3 +70,19 @@ export const getMessages = async (req, res) => {
         res.status(500).json({ error: 'Failed to retrieve messages' });
     }
 }
+
+export const getMessage_injection = async (req, res) => {
+    const db = getDatabaseConnection();
+    const id = req.body.id;
+
+    try {
+        const message = await db.collection('messages').findOne({ _id: sanitize(id) });
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+        res.status(200).json(message);
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ error: 'Failed to retrieve message' });
+    }
+};
