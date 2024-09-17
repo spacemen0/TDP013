@@ -4,19 +4,27 @@ import { getDatabaseConnection } from '../db/conn.js';
 
 
 export const createMessage = async (req, res) => {
-    const db = getDatabaseConnection()
+    const db = getDatabaseConnection();
     const { message } = req.body;
+
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
         return res.status(400).json({ error: 'Valid message content is required' });
     }
 
     try {
-        const result = await db.collection('messages').insertOne({ message, read: false });
-        res.status(200).json({ message: 'Message saved successfully', id: result.insertedId });
+        const result = await db.collection('messages').insertOne({
+            message,
+            read: false,
+            dateTime: new Date().toLocaleString()
+        });
+        const createdMessage = await db.collection('messages').findOne({ _id: result.insertedId });
+
+        res.status(200).json(createdMessage);
     } catch (error) {
         res.status(500).json({ error: 'Failed to save message' });
     }
-}
+};
+
 
 export const markMessageStatus = async (req, res) => {
     const db = getDatabaseConnection()
