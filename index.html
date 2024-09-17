@@ -61,46 +61,75 @@
     <script>
         const apiUrl = "http://localhost:3000"
 
-        function createMessage(message) {
-            const res = fetch(`${apiUrl}/messages`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message })
-            }).then(
-                (response) => {
-                    return response.json()
+        async function createMessage(message) {
+            try {
+                const response = await fetch(`${apiUrl}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message }),
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to post message');
                 }
-            ).then((result) => { result })
-            console.log(res)
-
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+            }
         }
 
-        function generateTweet(content, time) {
+        async function updateMessageStatus(id, read) {
+            try {
+                const response = await fetch(`${apiUrl}/messages/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ read }),
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to update message status');
+                }
+                return true
+            } catch (error) {
+                console.error('Error:', error);
+                return false;
+            }
+        }
+
+        function generateTweet(content, time, id, readStatus) {
             const tweetCard = document.createElement('div');
             tweetCard.className = 'card mb-3';
+            if (readStatus) tweetCard.classList.add('bg-light');
 
             tweetCard.innerHTML = `
-                <div class="card-body">
-                    <div class="d-flex  justify-content-between align-items-start">
-                        <div class="text-break">
-                            <h5 class="card-title">John Doe</h5>
-                            <p class="card-text" >${content}</p>
-                            <p class="card-text"><small class="text-muted">Posted at ${time}</small></p>
-                        </div>
-                        <div class="form-check align-self-center ms-2">
-                            <input class="form-check-input" style="width:30px;height:30px" type="checkbox" id="readCheck">
-                        </div>
-                    </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="text-break">
+                    <h5 class="card-title">Me</h5>
+                    <p class="card-text">${content}</p>
+                    <p class="card-text"><small class="text-muted">Posted at ${time}</small></p>
                 </div>
-            `;
+                <div class="form-check align-self-center ms-2">
+                    <input class="form-check-input" style="width:30px;height:30px" type="checkbox" id="readCheck" ${readStatus ? 'checked' : ''}>
+                </div>
+            </div>
+        </div>
+    `;
 
-            tweetCard.querySelector('#readCheck').addEventListener('change', function () {
-                if (this.checked) {
-                    tweetCard.classList.add('bg-light');
+            const checkBox = tweetCard.querySelector('#readCheck');
+            checkBox.addEventListener('change', async function () {
+                const isChecked = this.checked;
+                const success = await updateMessageStatus(id, isChecked);
+                if (success) {
+                    if (isChecked) {
+                        tweetCard.classList.add('bg-light');
+                    } else {
+                        tweetCard.classList.remove('bg-light');
+                    }
                 } else {
-                    tweetCard.classList.remove('bg-light');
+                    this.checked = !isChecked;
                 }
             });
 
@@ -108,20 +137,23 @@
         }
 
 
+
         async function fetchMessages() {
-            const res = await fetch(`${apiUrl}/messages`)
-            if (res) {
-                const tweetsArray = await res.json()
+            try {
+                const res = await fetch(`${apiUrl}/messages`);
+                const tweetsArray = await res.json();
                 tweetsArray.reverse().forEach(tweet => {
-                    const tweetCard = generateTweet(tweet.message, new Date().toLocaleString());
+                    const tweetCard = generateTweet(tweet.message, tweet.dateTime, tweet._id, tweet.read);
                     document.getElementById('tweets').appendChild(tweetCard);
                 });
+            } catch (error) {
+                console.error('Error fetching messages:', error);
             }
         }
 
         window.onload = fetchMessages
 
-        document.getElementById('postButton').addEventListener('click', function () {
+        document.getElementById('postButton').addEventListener('click', async function () {
             let tweetInput = document.getElementById('tweetInput');
             let warningText = document.getElementById('warningText');
             const tweetValue = tweetInput.value
@@ -134,12 +166,12 @@
                 warningText.classList.remove("d-none");
             } else {
                 warningText.classList.add("d-none");
-                const time = new Date().toLocaleString();
-                createMessage(tweetValue)
-                const tweetCard = generateTweet(tweetValue, time);
-                document.getElementById('tweets').insertBefore(tweetCard, document.getElementById('tweets').firstChild);
-                tweetInput.value = '';
-                appendTweetToCookie(tweetValue, time)
+                const result = await createMessage(tweetValue)
+                if (result && result.message && result.read && result.dateTime) {
+                    const tweetCard = generateTweet(result.message, result.dateTime, result.read);
+                    document.getElementById('tweets').insertBefore(tweetCard, document.getElementById('tweets').firstChild);
+                    tweetInput.value = '';
+                }
             }
         });
     </script>
